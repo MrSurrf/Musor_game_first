@@ -4,6 +4,11 @@ extends Control
 @onready var background: ColorRect = $Background
 @onready var error_sound: AudioStreamPlayer = $ErrorSound
 
+@onready var flash_overlay = $CanvasLayer/FlashOverlay
+
+
+var command_handler = CommandHandler.new()
+
 
 # Цвета для разных состояний
 var color_black = Color(0.0, 0.0, 0.0, 1.0)
@@ -25,7 +30,8 @@ var commands = {
 	"ls": "показывает список файлов",
 	"help": "показывает список доступных команд",
 	"clear": "очищает терминал",
-	"exit": "выход из системы"
+	"exit": "выход из системы",
+	"glitch": "error"
 }
 
 
@@ -37,17 +43,42 @@ func _ready():
 	terminal.bbcode_enabled = true
 	terminal.scroll_following = true
 	terminal.custom_minimum_size = Vector2(800, 600)
+
+	await load_startup_logs()
 	
 	# Выводим приветствие
-	append_terminal("[color=green]Система запущена. Введите 'help' для списка команд.[/color]")
-	append_terminal("")
-	append_terminal(prompt)
+	# append_terminal("[color=green]Система запущена. Введите 'help' для списка команд.[/color]")
+	# append_terminal("")
+	# append_terminal(prompt)
+	
 	
 	# Устанавливаем фокус на сцену
 	grab_focus()
 
+func load_startup_logs():
+	var file = FileAccess.open("res://assets/logs.txt", FileAccess.READ)
+	if file == null:
+		append_terminal("[color=red]ничего нет..........[/color]")	
+		return			
+	while not file.eof_reached():
+		var line = file.get_line()
+		if line != "":
+			append_terminal(line)
+			await get_tree().create_timer(0.01).timeout
+
+	append_terminal("")
+	append_terminal("[color=green]Система запущена. Введите 'help' для списка команд.[/color]")
+	append_terminal(prompt)
+	update_terminal_display()
+	
+
 func _unhandled_input(event: InputEvent):
 	if event is InputEventKey and event.pressed:
+
+		# Если активен top режим и нажата Q - выходим
+		if command_handler.top_active and event.keycode == KEY_Q:
+			command_handler.top_active = false
+			get_viewport().set_input_as_handled()
 		
 		# Проверяем комбинацию Ctrl+L
 		if event.ctrl_pressed and event.keycode == KEY_L:
@@ -97,6 +128,23 @@ func _unhandled_input(event: InputEvent):
 					update_terminal_display()
 					get_viewport().set_input_as_handled()
 
+func process_command(command: String):
+	var words = command.split(" ", false)
+	if words.size() == 0:
+		return
+	
+	var main_command = words[0]
+	
+	# Используем command_handler для выполнения команды
+	if command_handler.execute_command(main_command, self):
+		# Команда выполнена успешно
+		pass
+	else:
+		# Неизвестная команда - эффект ошибки
+		append_terminal("[color=red]Ошибка: команда '" + command + "' не найдена[/color]")
+		append_terminal("[color=yellow]Введите 'help' для списка команд[/color]")
+		play_error_feedback()
+
 func update_terminal_display():
 	# Обновляем дисплей с текущей командой и курсором
 	terminal.clear()
@@ -143,63 +191,16 @@ func send_command():
 	current_command = ""
 	update_terminal_display()
 
-func process_command(command: String):
-	var words = command.split(" ", false)
-	if words.size() == 0:
-		return
-	
-	var main_command = words[0]
-	
-	match main_command:
-		"mc":
-			change_background_color(color_blue)
-			mc_mode = true
-			append_terminal("[color=cyan]Midnight Commander активирован![/color]")
-			append_terminal("[color=cyan]╔════════════════════════════════════╗[/color]")
-			append_terminal("[color=cyan]║   Файловый менеджер активен       ║[/color]")
-			append_terminal("[color=cyan]╚════════════════════════════════════╝[/color]")
-		
-		"top":
-			change_background_color(color_green)
-			append_terminal("[color=lime]Список процессов:[/color]")
-			append_terminal("PID  USER    CPU%  MEM%  COMMAND")
-			append_terminal("1    root     0.1   0.5  /sbin/init")
-			append_terminal("42   ai_core  15.3  23.1  neural_process")
-			append_terminal("127  system   2.1   8.4   consciousness.exe")
-		
-		"ls":
-			append_terminal("[color=white]Содержимое директории:[/color]")
-			append_terminal("memories/    thoughts/    logs/")
-			append_terminal("config.sys   neural.dat   soul.bin")
-		
-		"help":
-			append_terminal("[color=yellow]Доступные команды:[/color]")
-			for cmd in commands.keys():
-				append_terminal("  [color=cyan]" + cmd + "[/color] - " + commands[cmd])
-		
-		"clear":
-			terminal_text = ""
-			terminal.clear()
-			change_background_color(color_black)
-			current_command = ""
-			append_terminal(prompt)
-			update_terminal_display()
-		
-		"exit":
-			append_terminal("[color=red]Завершение работы...[/color]")
-			await get_tree().create_timer(1.0).timeout
-			get_tree().quit()
-		
-		_:
-			# Неизвестная команда - эффект ошибки
-			append_terminal("[color=red]Ошибка: команда '" + command + "' не найдена[/color]")
-			append_terminal("[color=yellow]Введите 'help' для списка команд[/color]")
-			play_error_feedback()
+	# _:
+	# 	# Неизвестная команда - эффект ошибки
+	# 	append_terminal("[color=red]Ошибка: команда '" + command + "' не найдена[/color]")
+	# 	append_terminal("[color=yellow]Введите 'help' для списка команд[/color]")
+	# 	play_error_feedback()
 
 func play_error_feedback():
 	# Запускаем звук ошибки
 	if error_sound:
-		error_sound.play()
+		error_sound.play()	
 	
 	# Запускаем shake анимацию экрана
 	shake_screen()
