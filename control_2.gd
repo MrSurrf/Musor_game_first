@@ -88,6 +88,12 @@ func _unhandled_input(event: InputEvent):
 			current_command = ""
 			append_terminal(prompt)
 			get_viewport().set_input_as_handled()
+
+		if event.ctrl_pressed and event.keycode == KEY_C:
+			if command_handler.top_active:
+				command_handler.top_active = false
+				get_viewport().set_input_as_handled()
+				return
 		
 		match event.keycode:
 			KEY_ESCAPE:

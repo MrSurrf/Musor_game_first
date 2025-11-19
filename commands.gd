@@ -46,24 +46,29 @@ func cmd_mc(terminal):
 var top_active = false
 
 func cmd_top(terminal):
-	# terminal.change_background_color(Color(0.0, 0.3, 0.0))
-	terminal.append_terminal("[color=lime]Список процессов (нажми Q для выхода):[/color]")
-	terminal.append_terminal("PID  USER    CPU%  MEM%  COMMAND")
+	# terminal.append_terminal("[color=lime]Список процессов (нажми Q для выхода):[/color]")
+	# terminal.append_terminal("PID  USER    CPU%  MEM%  COMMAND")
+	
+	# Сохраняем позицию, где начинаются данные top
+	var history_before_top = terminal.terminal_text
 	
 	top_active = true
 	var iteration = 0
 	
-	while top_active and iteration < 30:
+	while top_active:
 		var cpu1 = randf_range(0.1, 5.0)
 		var mem1 = randf_range(0.3, 2.0)
 		var cpu2 = randf_range(10.0, 25.0)
 		var mem2 = randf_range(15.0, 30.0)
 		var cpu3 = randf_range(1.0, 5.0)
 		var mem3 = randf_range(5.0, 12.0)
-
-		# terminal.terminal.clear()
-		# terminal.terminal_text = ""  # Также очищаем буфер
 		
+		# Восстанавливаем историю и добавляем новые данные
+		terminal.terminal_text = history_before_top
+		terminal.terminal.clear()
+		# terminal.append_terminal(history_before_top)
+		terminal.append_terminal("[color=lime]Список процессов:[/color]")
+		terminal.append_terminal("PID  USER    CPU%  MEM%  COMMAND")
 		terminal.append_terminal("1    root     %.1f   %.1f  /sbin/init" % [cpu1, mem1])
 		terminal.append_terminal("42   ai_core  %.1f   %.1f  neural_process" % [cpu2, mem2])
 		terminal.append_terminal("127  system   %.1f   %.1f  consciousness.exe" % [cpu3, mem3])
@@ -73,6 +78,9 @@ func cmd_top(terminal):
 		await terminal.get_tree().create_timer(0.5).timeout
 	
 	terminal.append_terminal("[color=yellow]Выход из режима top[/color]")
+	terminal.current_command = ""
+	terminal.append_terminal(terminal.prompt)
+	terminal.update_terminal_display()
 
 
 func cmd_ls(terminal):
@@ -105,9 +113,7 @@ func cmd_flash(terminal):
 	var screen_rect = DisplayServer.screen_get_usable_rect()
 	
 	# Устанавливаем позицию и размер flash_overlay на весь экран
-	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
-	
-	
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)	
 	# Делаем вспышку видимой
 	flash.color = Color(1.0, 1.0, 1.0, 1.0)	
 	# terminal.append_terminal("[color=black]⚡ FLASH BANG ⚡[/color]")	
