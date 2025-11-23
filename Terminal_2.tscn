@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://b7c4wdyowjbgu"]
+[gd_scene load_steps=4 format=3 uid="uid://b7c4wdyowjbgu"]
 
 [ext_resource type="Script" uid="uid://bhwxp1cphyc6h" path="res://control_2.gd" id="1_fu1yf"]
 [ext_resource type="AudioStream" uid="uid://d0t5hllag4lwg" path="res://sound/sfx-5.mp3" id="2_x7a3p"]
+[ext_resource type="AudioStream" uid="uid://dkimuj2d16cl8" path="res://sound/a4bb978da8d70cb.mp3" id="3_x7a3p"]
 
 [node name="Control" type="Control"]
 layout_mode = 3
@@ -43,3 +44,6 @@ scroll_following = true
 
 [node name="ErrorSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_x7a3p")
+
+[node name="KeyClick" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_x7a3p")

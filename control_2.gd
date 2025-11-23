@@ -5,6 +5,8 @@ extends Control
 @onready var error_sound: AudioStreamPlayer = $ErrorSound
 
 @onready var flash_overlay = $CanvasLayer/FlashOverlay
+@onready var key_click: AudioStreamPlayer = $KeyClick
+
 
 
 var command_handler = CommandHandler.new()
@@ -80,15 +82,15 @@ func _unhandled_input(event: InputEvent):
 			command_handler.top_active = false
 			get_viewport().set_input_as_handled()
 		
-		# Проверяем комбинацию Ctrl+L
+		# Ctrl+L
 		if event.ctrl_pressed and event.keycode == KEY_L:
-			# Очищаем терминал (как в Linux Ctrl+L)
 			terminal_text = ""
 			terminal.clear()
 			current_command = ""
 			append_terminal(prompt)
 			get_viewport().set_input_as_handled()
-
+		
+		# Ctrl+C
 		if event.ctrl_pressed and event.keycode == KEY_C:
 			if command_handler.top_active:
 				command_handler.top_active = false
@@ -108,31 +110,40 @@ func _unhandled_input(event: InputEvent):
 				get_viewport().set_input_as_handled()
 			
 			KEY_ENTER:
-				# Отправляем команду
+				# Звук Enter (по желанию)
+				if not key_click.playing:
+					key_click.play()
 				send_command()
 				get_viewport().set_input_as_handled()
 			
 			KEY_BACKSPACE:
-				# Удаляем последний символ из команды
 				if current_command.length() > 0:
 					current_command = current_command.substr(0, current_command.length() - 1)
 					update_terminal_display()
+					if not key_click.playing:
+						key_click.play()
 				get_viewport().set_input_as_handled()
 			
 			KEY_DELETE:
-				# Очищаем текущую команду полностью
 				current_command = ""
 				update_terminal_display()
+				if not key_click.playing:
+					key_click.play()
 				get_viewport().set_input_as_handled()
 			
-					
 			_:
-				# Если нажата обычная клавиша с символом
+				# Обычный символ
 				if event.unicode > 0:
 					var char = char(event.unicode)
 					current_command += char
 					update_terminal_display()
+					
+					# Щелчок клавиши
+					if not key_click.playing:
+						key_click.play()
+					
 					get_viewport().set_input_as_handled()
+
 
 func process_command(command: String):
 	var words = command.split(" ", false)
