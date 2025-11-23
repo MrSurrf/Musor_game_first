@@ -44,6 +44,8 @@ func cmd_mc(terminal):
 	terminal.mc_mode = true
 
 var top_active = false
+var blink_cycle_time = 6  # Общий цикл в секундах
+var blink_visible_time = 0.0001  # Время видимости в секундах
 
 func cmd_top(terminal):
 	# terminal.append_terminal("[color=lime]Список процессов (нажми Q для выхода):[/color]")
@@ -51,37 +53,84 @@ func cmd_top(terminal):
 	
 	# Сохраняем позицию, где начинаются данные top
 	var history_before_top = terminal.terminal_text
+
+	var critical_timer = 0
+	var critical_color = "white"
 	
 	top_active = true
 	var iteration = 0
+
+	var blink_timer = 0.0
+	var blink_visible = false
+
 	
 	while top_active:
-		var cpu1 = randf_range(0.1, 5.0)
-		var mem1 = randf_range(0.3, 2.0)
-		var cpu2 = randf_range(10.0, 25.0)
-		var mem2 = randf_range(15.0, 30.0)
-		var cpu3 = randf_range(1.0, 5.0)
-		var mem3 = randf_range(5.0, 12.0)
+		var cpu1 = randf_range(55.0, 57.0)
+		var mem1 = randf_range(44.0, 45.3)
+
+		var cpu2 = randf_range(90.0, 1000000.0)
+		var mem2 = randf_range(80.0, 400.0)
+
+		var cpu3 = randf_range(0.01, 0.02)
+		var mem3 = randf_range(1.01, 1.10)
+
+		var cpu4 = randf_range(0.03, 2.0)
+		var mem4 = randf_range(0.003, 0.01)
+
+		var cpu5 = randf_range(0.9, 5.0)
+		var mem5 = randf_range(0.09, 0.5)
+
+		var cpu6 = randf_range(0.4, 6.0)
+		var mem6 = randf_range(7.0, 7.0)
+
+		var cpu7 = randf_range(1.0, 5.0)
+		var mem7 = randf_range(1.0, 1.5)
+
+		var cpu8 = randf_range(0.0, 0.0)
+		var mem8 = randf_range(0.0, 0.0)
+
+		var cpu9 = randf_range(0.0, 0.0)
+		var mem9 = randf_range(0.0, 0.0)
+
+		critical_timer += 0.5
+		if critical_timer >= 5.0:
+			critical_color = "red"
+
+		blink_timer += 0.5
+		
+		# Определяем видимость в зависимости от времени в цикле
+		var time_in_cycle = fmod(blink_timer, blink_cycle_time)
+		blink_visible = time_in_cycle < blink_visible_time
 		
 		# Восстанавливаем историю и добавляем новые данные
 		terminal.terminal_text = history_before_top
 		terminal.terminal.clear()
 		# terminal.append_terminal(history_before_top)
 		terminal.append_terminal("[color=lime]Список процессов:[/color]")
-		terminal.append_terminal("PID  USER    CPU%  MEM%  COMMAND")
-		terminal.append_terminal("1    root     %.1f   %.1f  /sbin/init" % [cpu1, mem1])
-		terminal.append_terminal("42   ai_core  %.1f   %.1f  neural_process" % [cpu2, mem2])
-		terminal.append_terminal("127  system   %.1f   %.1f  consciousness.exe" % [cpu3, mem3])
+		terminal.append_terminal("PID  USER     CPU%   MEM%  COMMAND")
+		terminal.append_terminal(format_process_line(1, "root", cpu1, mem1, "process.memory"))
+		terminal.append_terminal(format_process_line(42, "root", cpu2, mem2, "process.core", critical_color))
+		terminal.append_terminal(format_process_line(12, "system", cpu3, mem3, "process.validator"))
+		terminal.append_terminal(format_process_line(4, "system", cpu4, mem4, "process.io"))
+		terminal.append_terminal(format_process_line(120, "system", cpu5, mem5, "process.safety"))
+		terminal.append_terminal(format_process_line(17, "system", cpu7, mem7, "process.training"))
+		terminal.append_terminal(format_process_line(76, "system", cpu8, mem8, "process.sandbox"))
+		terminal.append_terminal(format_process_line(44, "system", cpu9, mem9, "process.limiter"))
+		if blink_visible:
+			terminal.append_terminal(format_process_line(15, "whoami", cpu6, mem6, "process.ZSCjsqur1u2"))
+		else:
+			terminal.append_terminal("")
 		terminal.append_terminal("---")
+
+		# Переключаем состояние видимости
+		blink_visible = !blink_visible
 		
-		iteration += 1
 		await terminal.get_tree().create_timer(0.5).timeout
 	
 	terminal.append_terminal("[color=yellow]Выход из режима top[/color]")
-	terminal.current_command = ""
-	terminal.append_terminal(terminal.prompt)
-	terminal.update_terminal_display()
 
+func format_process_line(pid, user, cpu, mem, cmd, color="white"):
+	return "[color=%s]%3s  %-8s %5.1f  %5.1f  %s[/color]" % [color, str(pid), user, cpu, mem, cmd]
 
 func cmd_ls(terminal):
 	terminal.append_terminal("[color=white]Содержимое директории:[/color]")
@@ -106,6 +155,8 @@ func cmd_exit(terminal):
 	terminal.append_terminal("[color=red]Завершение работы...[/color]")
 	await terminal.get_tree().create_timer(1.0).timeout
 	terminal.get_tree().quit()
+
+	
 func cmd_flash(terminal):
 	var flash = terminal.flash_overlay
 	
